@@ -1,10 +1,14 @@
 {
   "name": "mc-router",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Minecraft Java Edition reverse proxy with hostname routing and Transfer packet support",
   "keywords": ["mc","minecraft","minecraftjava","minecraftjavaedition","reverse-proxy"],
   "author": {
     "name": "jonnygamingtv"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alvin677/mc-router.git"
   },
   "main": "proxy.js",
   "scripts": {
