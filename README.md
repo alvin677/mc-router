@@ -40,7 +40,7 @@ Port defaults to `25565` if omitted. Keys are case-insensitive.
 |-------------|---------------|------------------------------------|
 | `MC_PORT`   | `25565`       | Port to listen on                  |
 | `MC_CONFIG` | `config.json` | Path to the routing config file    |
-| `MC_DEFAULT_ROUTE` | `jonhosting.com` | Default/Fallback server |
+| `MC_DEFAULT_ROUTE` | *Not set* | Default/Fallback server key in config.json. (Node.js default: `jonhosting.com`) |
 
 ## How Transfer works
 
