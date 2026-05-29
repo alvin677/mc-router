@@ -1,0 +1,23 @@
+[package]
+name = "mc-router"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Async runtime — "full" enables all features (net, time, sync, fs, signal)
+tokio    = { version = "1", features = ["full"] }
+# JSON config parsing
+serde_json = "1"
+# Lock-free atomic pointer swap — lets every task read the route map
+# without a mutex, publishing a new Arc<RouteMap> atomically on reload
+arc-swap = "1"
+# File system events for hot-reload
+notify   = "6"
+# Ergonomic error handling / propagation
+anyhow   = "1"
+
+[profile.release]
+opt-level       = 3
+lto             = true   # link-time optimisation across crates
+codegen-units   = 1      # single codegen unit → better inlining
+strip           = true   # strip debug symbols from binary
