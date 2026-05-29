@@ -317,7 +317,34 @@ async fn route_connection(
         );
         let pkt = build_transfer_packets(&route.host, route.port);
         client.write_all(&pkt).await?;
+
+        // Half-close the write side (sends FIN — "we\'re done sending").
         client.shutdown().await?;
+
+        // IMPORTANT: drain any bytes the client already sent (e.g. Login Start,
+        // which arrives in the same burst as the Handshake) before we return
+        // and drop the socket.
+        //
+        // Why: close() on a socket with *unread data* in the receive buffer
+        // sends a TCP RST instead of a clean close. That RST can arrive at the
+        // client while it is still processing our Login Success + Transfer
+        // packets, causing a spurious "Disconnected" — the exact race we see.
+        //
+        // Draining until EOF (or a short timeout) lets the OS do a graceful
+        // FIN/FIN-ACK exchange instead, matching Node\'s socket.end() behaviour.
+        let mut sink = [0u8; 256];
+        let drain = async {
+            loop {
+                match client.read(&mut sink).await {
+                    Ok(0) | Err(_) => break, // EOF or error — we\'re done
+                    Ok(_) => {}              // discard, keep draining
+                }
+            }
+        };
+        // 2-second ceiling — the client should disconnect almost immediately
+        // after receiving the Transfer packet; this is just a safety bound.
+        let _ = timeout(Duration::from_secs(2), drain).await;
+
         return Ok(());
     }
 
