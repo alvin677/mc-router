@@ -13,9 +13,8 @@ Minecraft Java Edition reverse proxy. Routes incoming connections to backend ser
 ## Quick start
 
 ```bash
-node proxy.js
-# or with file watching for auto-restart on source changes:
-node --watch proxy.js
+cargo build --release
+target/release/mc-router
 ```
 
 Listens on `:25565` by default.
