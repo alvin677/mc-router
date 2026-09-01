@@ -185,11 +185,19 @@ fn try_parse_handshake(buf: &[u8]) -> Result<Option<Handshake>> {
 
 // ─── Transfer packet ──────────────────────────────────────────────────────────
 
-fn build_transfer_packets(host: &str, port: u16) -> Vec<u8> {
+fn build_transfer_packets(host: &str, port: u16, protocol: i32) -> Vec<u8> {
+    // Login Success payload by protocol version:
+    //   766 (1.20.5): UUID + Name + Properties[] + Strict Error Handling (bool)
+    //   768 (1.21.2): Strict Error Handling boolean removed
+    //   776 (26.2):   Session ID UUID appended after Properties[]
     let mut login_payload = Vec::new();
-    login_payload.extend_from_slice(&[0u8; 16]);
-    login_payload.extend(write_string(""));
-    login_payload.extend(write_varint(0));
+    login_payload.extend_from_slice(&[0u8; 16]); // player UUID (zeros — client transfers away immediately)
+    login_payload.extend(write_string(""));       // username (irrelevant before transfer)
+    login_payload.extend(write_varint(0));        // property count (none)
+    if protocol >= 776 {
+        // Session ID UUID: new field added in 26.2 (protocol 776)
+        login_payload.extend_from_slice(&[0u8; 16]);
+    }
 
     let mut login_body = write_varint(0x02);
     login_body.extend(&login_payload);
@@ -449,7 +457,7 @@ async fn route_connection(
             "[proxy] {client_addr} → \"{}\" — TRANSFER → {}:{}",
             hs.server_address, route.host, route.port
         );
-        let pkt = build_transfer_packets(&route.host, route.port);
+        let pkt = build_transfer_packets(&route.host, route.port, hs.protocol_version);
         client.write_all(&pkt).await?;
         client.shutdown().await?;
 
