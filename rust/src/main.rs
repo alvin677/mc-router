@@ -194,6 +194,11 @@ fn build_transfer_packets(host: &str, port: u16, protocol: i32) -> Vec<u8> {
     login_payload.extend_from_slice(&[0u8; 16]); // player UUID (zeros — client transfers away immediately)
     login_payload.extend(write_string(""));       // username (irrelevant before transfer)
     login_payload.extend(write_varint(0));        // property count (none)
+    if protocol <= 767 {
+        // Strict Error Handling boolean: added in 1.20.5 (766), removed in 1.21.2 (768).
+        // Protocols 766 and 767 (1.20.5, 1.21, 1.21.1) require this field.
+        login_payload.push(0x00); // false
+    }
     if protocol >= 776 {
         // Session ID UUID: new field added in 26.2 (protocol 776)
         login_payload.extend_from_slice(&[0u8; 16]);
