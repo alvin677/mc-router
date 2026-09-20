@@ -213,7 +213,12 @@ fn build_transfer_packets(host: &str, port: u16, protocol: i32) -> Vec<u8> {
     xfer_payload.extend(write_string(host));
     xfer_payload.extend(write_varint(port as u32));
 
-    let mut xfer_body = write_varint(0x0B);
+    // Transfer packet ID in configuration state varies by protocol:
+    //   766–776 (1.20.5–26.2): store_cookie = 0x0A, transfer = 0x0B
+    //   ≥777    (26.3+):       CLIENTBOUND_POST_EFFECTS inserted at 0x0A,
+    //                          pushing store_cookie → 0x0B, transfer → 0x0C
+    let transfer_id: u32 = if protocol >= 777 { 0x0C } else { 0x0B };
+    let mut xfer_body = write_varint(transfer_id);
     xfer_body.extend(&xfer_payload);
     let mut xfer_frame = write_varint(xfer_body.len() as u32);
     xfer_frame.extend(xfer_body);
