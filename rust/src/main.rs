@@ -13,6 +13,22 @@
 //!   5b. Older client or status ping → open TCP to backend, replay buffered
 //!       bytes, then splice bidirectionally (Linux) or copy_bidirectional.
 
+// Only writes to console in debug mode
+macro_rules! debug_print {
+    ($($arg:tt)*) => {
+        if cfg!(debug_assertions) {
+            println!($($arg)*);
+        }
+    };
+}
+macro_rules! debug_error {
+    ($($arg:tt)*) => {
+        if cfg!(debug_assertions) {
+            eprintln!($($arg)*);
+        }
+    };
+}
+
 use std::{
     collections::HashMap,
     env,
@@ -419,7 +435,7 @@ async fn handle_client(
     if let Err(e) = route_connection(client, routes, default_key, client_addr).await {
         let msg = e.to_string();
         if !msg.contains("reset") && !msg.contains("closed") && !msg.contains("EOF") {
-            eprintln!("[proxy] {client_addr} — {e:#}");
+            debug_error!("[proxy] {client_addr} — {e:#}");
         }
         // Socket is already dropped/closed by route_connection at this point.
     }
@@ -450,7 +466,7 @@ async fn route_connection(
     let route = match route {
         Some(r) => r,
         None => {
-            eprintln!(
+            debug_error!(
                 "[proxy] {client_addr} → \"{}\" — no route, dropping",
                 hs.server_address
             );
@@ -463,7 +479,7 @@ async fn route_connection(
         hs.next_state == 2 && hs.protocol_version >= TRANSFER_MIN_PROTOCOL;
 
     if use_transfer {
-        println!(
+        debug_print!(
             "[proxy] {client_addr} → \"{}\" — TRANSFER → {}:{}",
             hs.server_address, route.host, route.port
         );
@@ -487,7 +503,7 @@ async fn route_connection(
     }
 
     // ── Proxy path ───────────────────────────────────────────────────────────
-    println!(
+    debug_print!(
         "[proxy] {client_addr} → \"{}\" — PIPE → {}:{}",
         hs.server_address, route.host, route.port
     );
